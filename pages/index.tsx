@@ -1,11 +1,65 @@
 import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
-import styles from '@/styles/Home.module.css'
+import axios from 'axios'
+import { RequestData } from '../types/request'
+import { FormInput } from '../types/formInput'
+import {
+  Input,
+  InputGroup,
+  FormControl,
+  Button,
+  IconButton,
+  Flex,
+  FormErrorMessage,
+  VStack,
+  Text,
+  CloseButton,
+} from '@chakra-ui/react'
+import { AddIcon } from '@chakra-ui/icons'
+import { useFieldArray, useForm } from 'react-hook-form'
+import { convertUnfamiliarWords } from '../utils/convertUnfamiliarWords'
+import { MESSAGES } from '../constants/messages'
 
-const inter = Inter({ subsets: ['latin'] })
+const defineDefaultUnfamiliarWord = () => ({
+  value: '',
+})
+
+const defaultValues = {
+  unfamiliarWords: [
+    defineDefaultUnfamiliarWord(),
+    defineDefaultUnfamiliarWord(),
+  ],
+  metaphor: 'aaa',
+}
 
 export default function Home() {
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm<FormInput>({
+    defaultValues,
+    mode: 'onChange',
+  })
+  const { fields, append, remove } = useFieldArray({
+    name: 'unfamiliarWords',
+    control,
+  })
+
+  const hasError = (index: number): boolean =>
+    Boolean(
+      errors.unfamiliarWords && errors.unfamiliarWords[index]?.value?.message,
+    )
+
+  const generateAI = async (inputs: FormInput) => {
+    const text = convertUnfamiliarWords(inputs)
+    const data: RequestData = {
+      text,
+    }
+    const response = await axios.post('/api/ai', data)
+    console.log(response)
+  }
+
   return (
     <>
       <Head>
@@ -14,109 +68,69 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={styles.main}>
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>pages/index.tsx</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              By{' '}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
+      <main>
+        <VStack>
+          <form onSubmit={handleSubmit(generateAI)}>
+            {fields.map((field, index) => (
+              <FormControl key={field.id} isInvalid={hasError(index)}>
+                <InputGroup my="4" mx="auto">
+                  <Input
+                    size="lg"
+                    {...register(`unfamiliarWords.${index}.value` as const, {
+                      maxLength: {
+                        value: 15,
+                        message: MESSAGES.validate.maxLength(15),
+                      },
+                    })}
+                  />
+
+                  <CloseButton
+                    variant="ghost"
+                    my="auto"
+                    aria-label="Remove unfamiliarWord"
+                    onClick={() => remove(index)}
+                    isDisabled={fields.length <= 2}
+                  />
+                </InputGroup>
+
+                <FormErrorMessage>
+                  {errors.unfamiliarWords &&
+                    errors.unfamiliarWords[index]?.value?.message}
+                </FormErrorMessage>
+              </FormControl>
+            ))}
+
+            <Flex justify="center" my="4">
+              <IconButton
+                aria-label="Add to unfamiliarWords"
+                icon={<AddIcon />}
+                variant="outline"
+                onClick={() => append(defineDefaultUnfamiliarWord())}
+                isDisabled={fields.length >= 5}
               />
-            </a>
-          </div>
-        </div>
+            </Flex>
 
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-          <div className={styles.thirteen}>
-            <Image
-              src="/thirteen.svg"
-              alt="13"
-              width={40}
-              height={31}
-              priority
+            <Text mb="2" fontSize="2xl" align="center">
+              の違いを
+            </Text>
+
+            <Input
+              size="lg"
+              {...register('metaphor' as const, {
+                maxLength: {
+                  value: 15,
+                  message: MESSAGES.validate.maxLength(15),
+                },
+              })}
             />
-          </div>
-        </div>
 
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
-        </div>
+            <Flex justify="center" my="4">
+              <Button colorScheme="blue" type="submit" isLoading={isSubmitting}>
+                で例えて！
+              </Button>
+            </Flex>
+          </form>
+        </VStack>
       </main>
     </>
   )
