@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { Configuration, OpenAIApi } from 'openai'
 import { ChatCompletionRequestMessageRoleEnum } from 'openai/dist/api'
-import { RequestData } from '../types/request'
+import { RequestData } from '../../types/request'
 
 export default async function generate(
   req: NextApiRequest,
