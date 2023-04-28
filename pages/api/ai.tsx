@@ -13,19 +13,22 @@ export default async function generate(
     }),
   )
 
-  const input = req.body as RequestData
-  const content = `${input.text}の違いを簡潔に別のものに例えて`
+  const { text } = req.body as RequestData
 
-  const response = await openai.createChatCompletion({
-    model: 'gpt-3.5-turbo',
-    messages: [
-      {
-        role: ChatCompletionRequestMessageRoleEnum.System,
-        content,
-      },
-    ],
-  })
+  try {
+    const response = await openai.createChatCompletion({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: ChatCompletionRequestMessageRoleEnum.System,
+          content: text,
+        },
+      ],
+    })
 
-  const result = response.data.choices[0]
-  res.status(200).json({ result })
+    const result = response.data.choices[0].message?.content
+    res.status(200).json({ result })
+  } catch (error) {
+    console.error(error)
+  }
 }
