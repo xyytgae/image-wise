@@ -8,16 +8,18 @@ import {
   FormControl,
   Button,
   IconButton,
-  Flex,
   FormErrorMessage,
-  VStack,
   Text,
   CloseButton,
+  Box,
+  Stack,
+  Container,
 } from '@chakra-ui/react'
 import { AddIcon } from '@chakra-ui/icons'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { convertUnfamiliarWords } from '../utils/convertUnfamiliarWords'
 import { MESSAGES } from '../constants/messages'
+import { useState } from 'react'
 
 const defineDefaultUnfamiliarWord = () => ({
   value: '',
@@ -28,7 +30,7 @@ const defaultValues = {
     defineDefaultUnfamiliarWord(),
     defineDefaultUnfamiliarWord(),
   ],
-  metaphor: 'aaa',
+  metaphor: '',
 }
 
 export default function Home() {
@@ -46,6 +48,8 @@ export default function Home() {
     control,
   })
 
+  const [result, setResult] = useState<string>('')
+
   const hasError = (index: number): boolean =>
     Boolean(
       errors.unfamiliarWords && errors.unfamiliarWords[index]?.value?.message,
@@ -57,7 +61,7 @@ export default function Home() {
       text,
     }
     const response = await axios.post('/api/ai', data)
-    console.log(response)
+    setResult(response.data.result)
   }
 
   return (
@@ -69,68 +73,96 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main>
-        <VStack>
-          <form onSubmit={handleSubmit(generateAI)}>
-            {fields.map((field, index) => (
-              <FormControl key={field.id} isInvalid={hasError(index)}>
-                <InputGroup my="4" mx="auto">
-                  <Input
-                    size="lg"
-                    {...register(`unfamiliarWords.${index}.value` as const, {
-                      maxLength: {
-                        value: 15,
-                        message: MESSAGES.validate.maxLength(15),
-                      },
-                    })}
-                  />
+        <Container width={['100%', '75%']}>
+          <Stack>
+            <Box mb="8">
+              <Stack>
+                <form onSubmit={handleSubmit(generateAI)}>
+                  <Stack spacing="8">
+                    <Stack>
+                      {fields.map((field, index) => (
+                        <FormControl key={field.id} isInvalid={hasError(index)}>
+                          <InputGroup my="4">
+                            <Input
+                              size="lg"
+                              {...register(
+                                `unfamiliarWords.${index}.value` as const,
+                                {
+                                  maxLength: {
+                                    value: 15,
+                                    message: MESSAGES.validate.maxLength(15),
+                                  },
+                                },
+                              )}
+                            />
 
-                  <CloseButton
-                    variant="ghost"
-                    my="auto"
-                    aria-label="Remove unfamiliarWord"
-                    onClick={() => remove(index)}
-                    isDisabled={fields.length <= 2}
-                  />
-                </InputGroup>
+                            <CloseButton
+                              variant="ghost"
+                              my="auto"
+                              aria-label="Remove unfamiliarWord"
+                              onClick={() => remove(index)}
+                              isDisabled={fields.length <= 2}
+                            />
+                          </InputGroup>
 
-                <FormErrorMessage>
-                  {errors.unfamiliarWords &&
-                    errors.unfamiliarWords[index]?.value?.message}
-                </FormErrorMessage>
-              </FormControl>
-            ))}
+                          <FormErrorMessage>
+                            {errors.unfamiliarWords &&
+                              errors.unfamiliarWords[index]?.value?.message}
+                          </FormErrorMessage>
+                        </FormControl>
+                      ))}
+                    </Stack>
 
-            <Flex justify="center" my="4">
-              <IconButton
-                aria-label="Add to unfamiliarWords"
-                icon={<AddIcon />}
-                variant="outline"
-                onClick={() => append(defineDefaultUnfamiliarWord())}
-                isDisabled={fields.length >= 5}
-              />
-            </Flex>
+                    <Stack>
+                      <IconButton
+                        aria-label="Add to unfamiliarWords"
+                        icon={<AddIcon />}
+                        variant="outline"
+                        fontSize="20px"
+                        onClick={() => append(defineDefaultUnfamiliarWord())}
+                        isDisabled={fields.length >= 5}
+                      />
+                    </Stack>
+                  </Stack>
 
-            <Text mb="2" fontSize="2xl" align="center">
-              の違いを
-            </Text>
+                  <Stack>
+                    <Text mb="2" fontSize="2xl" align="center" my="4">
+                      の違いを
+                    </Text>
+                  </Stack>
+                  <Stack spacing="8">
+                    <Input
+                      size="lg"
+                      {...register('metaphor' as const, {
+                        maxLength: {
+                          value: 15,
+                          message: MESSAGES.validate.maxLength(15),
+                        },
+                      })}
+                    />
 
-            <Input
-              size="lg"
-              {...register('metaphor' as const, {
-                maxLength: {
-                  value: 15,
-                  message: MESSAGES.validate.maxLength(15),
-                },
-              })}
-            />
+                    <Button
+                      colorScheme="blue"
+                      type="submit"
+                      isLoading={isSubmitting}
+                    >
+                      で例えて
+                    </Button>
+                  </Stack>
+                </form>
+              </Stack>
+            </Box>
 
-            <Flex justify="center" my="4">
-              <Button colorScheme="blue" type="submit" isLoading={isSubmitting}>
-                で例えて！
-              </Button>
-            </Flex>
-          </form>
-        </VStack>
+            {result && (
+              <Box p="4" border="4px" borderColor="gray.200" borderRadius="md">
+                <Text mb="2" fontWeight="bold">
+                  Result:
+                </Text>
+                <Text>{result}</Text>
+              </Box>
+            )}
+          </Stack>
+        </Container>
       </main>
     </>
   )
